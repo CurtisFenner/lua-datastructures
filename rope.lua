@@ -37,13 +37,14 @@
 -- the height of the left child must not differ from the height of the right
 -- child by more than one. This guarantees that the height (aka depth) of the
 -- tree is at most logarithmic in the size of the tree.
--- The size of the subtrees implicitly determine the keys using in the search
--- tree: if there are N elements to your left, you are at index N+1.
+
+-- In a rope, the size of the subtrees implicitly determine the keys using in
+-- the search tree: if there are N elements to your left, you are at index N+1.
 -- Because the keys are implicit, they don't need to be updated in a
 -- concatenation, along O(log n) concatenation.
 --------------------------------------------------------------------------------
 
--- OVERVIEW
+-- LIBRARY OVERVIEW
 
 -- Rope.empty()
 -- Make a new size 0 rope
