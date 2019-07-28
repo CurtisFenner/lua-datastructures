@@ -6,6 +6,25 @@
 -- It enables fast substring queries after doing linear pre-processing on the
 -- document to query.
 
+-- The interface has only a single method:
+	-- :search(substr) -> bool
+--------------------------------------------------------------------------------
+
+-- LIBRARY OVERVIEW
+
+-- SuffixTree.new(list)
+-- Makes a new suffix tree for the given list.
+-- Linear in the length of list.
+-- REQUIRES list is not empty.
+
+-- SuffixTree:search(sublist)
+-- Returns whether or not the given sublist appears as a contiguous subarray in
+-- the list passed to the constructor.
+-- Linear in the length of sublist.
+-- REQUIRES list is not empty.
+
+--------------------------------------------------------------------------------
+
 local function sliceLength(t)
 	return t[2] - t[1] + 1
 end
@@ -55,8 +74,11 @@ local function insert(tree, slice)
 	end
 end
 
+-- RETURNS a SuffixTree constructed for the given list.
 -- REQUIRES that the list's elements, with respect to `==`, are never mutated
 -- after being passed to this constructor.
+-- REQUIRES list is not empty (in particular, strings cannot be passed to
+-- SuffixTree; they must be "exploded" into lists of characters).
 function SuffixTree.new(list)
 	local copy = {}
 	for i = 1, #list do
@@ -88,6 +110,9 @@ local function search(tree, query)
 	return search(tree[index][2], {query[1] + common, query[2], query[3]})
 end
 
+-- RETURNS whether the given substr appears as a contiguous subarray of the list
+-- passed to this SuffixTree's constructor.
+-- REQUIRES that substr is not empty.
 function SuffixTree:search(substr)
 	assert(#substr ~= 0)
 	return search(self._root, {1, #substr, substr})
