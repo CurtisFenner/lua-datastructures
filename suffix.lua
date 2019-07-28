@@ -7,48 +7,51 @@
 -- document to query.
 
 local function sliceLength(t)
-	assert(#t == 3)
 	return t[2] - t[1] + 1
 end
 
 local function sliceGet(t, i)
-	assert(#t == 3)
-	assert(1 <= i and i <= sliceLength(t), "index " .. tostring(i) .. " not in bounds [1, " .. sliceLength(t) .. "]")
 	return t[3][t[1] + i - 1]
 end
 
 local SuffixTree = {}
 
+local min = math.min
+
 local function matchingPrefix(tree, slice)
-	for key, subtree in pairs(tree) do
+	for i = 1, #tree do
+		local key, subtree = tree[i][1], tree[i][2]
 		if sliceGet(slice, 1) == sliceGet(key, 1) then
-			for k = 1, math.min(sliceLength(key), sliceLength(slice)) do
+			local limit = min(sliceLength(key), sliceLength(slice))
+			for k = 1, limit do
 				if sliceGet(slice, k) ~= sliceGet(key, k) then
-					return key, k - 1
+					return i, k - 1
 				end
 			end
-			return key, math.min(sliceLength(key), sliceLength(slice))
+			return i, limit
 		end
 	end
 end
 
 local function insert(tree, slice)
-	assert(slice)
-	local key, common = matchingPrefix(tree, slice)
-	if not key then
+	local index, common = matchingPrefix(tree, slice)
+	if not index then
 		-- Insert a new substring.
-		tree[slice] = {}
+		tree[#tree + 1] = {slice, {}}
 		return
 	else
+		local pair = tree[index]
+		local oldKey = pair[1]
+		local oldSubtree = pair[2]
+		
 		-- Split the key where they are common.
-		assert(common >= 1)
-		local previous = tree[key]
-		tree[key] = nil
-		local subtree = {}
-		tree[{slice[1], slice[1] + common - 1, slice[3]}] = {
-			[{key[1] + common, key[2], key[3]}] = previous,
+		local remainder = {}
+		local branch = {
+			{{oldKey[1] + common, oldKey[2], oldKey[3]}, oldSubtree},
+			{{slice[1] + common, slice[2], slice[3]}, remainder},
 		}
-		return insert(subtree, {slice[1] + common, slice[2], slice[3]})
+		tree[index] = {{oldKey[1], oldKey[1] + common - 1, oldKey[3]}, branch}
+		return insert(remainder, {slice[1] + common, slice[2], slice[3]})
 	end
 end
 
@@ -76,15 +79,13 @@ function SuffixTree.new(list)
 end
 
 local function search(tree, query)
-	local key, common = matchingPrefix(tree, query)
-	if not key then
+	local index, common = matchingPrefix(tree, query)
+	if not index then
 		return false
-	end
-
-	if common == sliceLength(query) then
+	elseif common == sliceLength(query) then
 		return true
 	end
-	return search(tree[key], {query[1] + common, query[2], query[3]})
+	return search(tree[index][2], {query[1] + common, query[2], query[3]})
 end
 
 function SuffixTree:search(substr)
@@ -108,8 +109,8 @@ end
 
 --------------------------------------------------------------------------------
 
-do
-	for n = 1, 10000, 100 do
+if false then
+	for n = 1, 200000, 10000 do
 		local list = {}
 		for i = 1, n do
 			list[i] = math.random(3)
@@ -117,6 +118,6 @@ do
 		local before = os.clock()
 		local st = SuffixTree.new(list)
 		local after = os.clock()
-		print(n, after - before)
+		print(n, after - before, (after - before) / n)
 	end
 end
